@@ -141,7 +141,7 @@ fn create_fake_desktop(event_loop: &EventLoop<()>, monitor: &MonitorHandle, moni
     window.set_cursor_icon(CursorIcon::Crosshair);
     
     let context = Context::new(window.clone()).unwrap();
-    let mut surface = softbuffer::Surface::new(&context, window.clone()).unwrap();
+    let mut surface = Surface::new(&context, window.clone()).unwrap();
 
     surface.resize(NonZeroU32::new(image.width()).unwrap(), NonZeroU32::new(image.height()).unwrap());
 
@@ -184,6 +184,10 @@ fn draw_square_on_image(image: &RgbaImage, rect: Rect) -> RgbaImage {
 fn buffer_image(buffer: &mut Buffer<'_, Rc<Window>, Rc<Window>>, image: &RgbaImage) {
     let mut i = 0;
 
+    Buffer
+
+    buffer.as_mut_ptr() = (image.as_bytes().as_mut_ptr() as *mut u32);
+
     for pixel in image.pixels() {
         let red = pixel.0[0] as u32;
         let green = pixel.0[1] as u32;
@@ -210,7 +214,7 @@ fn process_image(image: &RgbaImage, rect: Rect) {
     let dyn_image = Image::from_dynamic_image(&DynamicImage::ImageRgba8(cropped_image)).unwrap();
 
     let args = Args {
-        lang: "jpn_vert_best".to_string(),
+        lang: "jpn_vert".to_string(),
         dpi: Some(150),
         psm: Some(5),
         oem: Some(3),
