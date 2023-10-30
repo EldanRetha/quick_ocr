@@ -184,8 +184,6 @@ fn draw_square_on_image(image: &RgbaImage, rect: Rect) -> RgbaImage {
 fn buffer_image(buffer: &mut Buffer<'_, Rc<Window>, Rc<Window>>, image: &RgbaImage) {
     let mut i = 0;
 
-    buffer.as_mut_ptr() = (image.as_bytes().as_mut_ptr() as *mut u32);
-
     for pixel in image.pixels() {
         let red = pixel.0[0] as u32;
         let green = pixel.0[1] as u32;
