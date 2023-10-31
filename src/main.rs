@@ -4,26 +4,26 @@ use screenshots::Screen;
 
 
 use screenshots::image::RgbaImage;
-use winit::dpi::{PhysicalSize, PhysicalPosition};
+use winit::dpi::PhysicalPosition;
 use winit::event::{ElementState, Event, KeyEvent, WindowEvent, MouseButton};
 use winit::event_loop::EventLoop;
 use winit::keyboard::{Key, NamedKey};
 use winit::monitor::MonitorHandle;
 use winit::platform::windows::WindowExtWindows;
-use winit::window::{Fullscreen, WindowBuilder, Window, self, CursorIcon};
+use winit::window::{Fullscreen, WindowBuilder, Window, CursorIcon};
 
 #[cfg(target_os = "macos")]
 use winit::platform::macos::WindowExtMacOS;
 
 // Window fill references
 use softbuffer::{Context, Surface, Buffer};
-use std::collections::{HashMap};
+use std::collections::HashMap;
 use std::num::NonZeroU32;
 use std::rc::Rc;
 
 use imageproc::drawing::draw_hollow_rect_mut;
 use imageproc::rect::Rect;
-use image::{Rgba, DynamicImage, GenericImageView, ImageBuffer, Pixel, GenericImage};
+use image::{Rgba, DynamicImage, GenericImageView, GenericImage};
 
 
 fn main() -> Result<(), winit::error::EventLoopError>{
@@ -99,12 +99,12 @@ fn main() -> Result<(), winit::error::EventLoopError>{
                     position => {
                         mouse_pos = position;
                         if mouse_down {
-                            //println!("Mouse origin {:?} Current pos {:?}", mouse_down_pos, mouse_pos);
+                            let screen =  window_screens[&window_id];
+                            mouse_pos = keep_mouse_in_window(mouse_pos, screen.width() as f64, screen.height() as f64);
                             let rect = calculate_rect(mouse_down_pos, mouse_pos);
-                            on_mouse_drag(&windows[&window_id], window_screens[&window_id], rect);
+                            on_mouse_drag(&windows[&window_id], screen, rect);
                         }
-                    },
-                    _ => ()
+                    }
                 }
                 _ => (),
             }
@@ -114,6 +114,12 @@ fn main() -> Result<(), winit::error::EventLoopError>{
     return result;
 }
 
+fn keep_mouse_in_window(mouse_pos: PhysicalPosition<f64>, x_max: f64, y_max: f64) -> PhysicalPosition<f64>{
+    PhysicalPosition{
+        x: mouse_pos.x.min(x_max - 1f64).max(0f64),
+        y: mouse_pos.y.min(y_max - 1f64).max(0f64)
+    }
+}
 
 fn calculate_rect(pos1: PhysicalPosition<f64>, pos2: PhysicalPosition<f64>) -> Rect {
     let x1 = pos1.x as i32;
@@ -163,21 +169,17 @@ fn on_mouse_drag(window: &Rc<Window>, image: &RgbaImage, rect: Rect) {
     surface.resize(NonZeroU32::new(image.width()).unwrap(), NonZeroU32::new(image.height()).unwrap()).expect("Failed to resize window");
 
     let mut buffer = surface.buffer_mut().unwrap();
-
-    
-
-
-    let mut new_buffer = BufferWrapper{
+    let mut wrapped_buffer = BufferWrapper{
         buffer: &mut buffer,
         width: image.width(),
         height: image.height(),
         x: rect.left() as u32,
         y: rect.top() as u32
     };
-    draw_shaded_image(&mut new_buffer.buffer, image);
+    draw_shaded_image(&mut wrapped_buffer.buffer, image);
     let sub_image = image.view(rect.left() as u32, rect.top() as u32, rect.width(), rect.height());
-    new_buffer.copy_from(&*sub_image, rect.left() as u32, rect.top() as u32).expect("Failed to copy subimage");
-    draw_hollow_rect_mut(&mut new_buffer, rect, Rgba([255,0,0,255]));
+    wrapped_buffer.copy_from(&*sub_image, rect.left() as u32, rect.top() as u32).expect("Failed to copy subimage");
+    draw_hollow_rect_mut(&mut wrapped_buffer, rect, Rgba([255,0,0,255]));
 
     buffer.present().expect("Failed to present buffer");
 }
@@ -223,16 +225,16 @@ impl<'a, 'b> GenericImage for BufferWrapper<'a, 'b> {
         self.buffer[(y * self.width + x) as usize] = color_u32;
     }
 
+    #[allow(unused_variables)]
     fn get_pixel_mut(&mut self, x: u32, y: u32) -> &mut Self::Pixel {
         todo!();
     }
 
+    #[allow(unused_variables)]
     fn blend_pixel(&mut self, x: u32, y: u32, pixel: Self::Pixel) {
         todo!();
     }
 }
-
-
 
 fn draw_shaded_image(buffer: &mut Buffer<'_, Rc<Window>, Rc<Window>>, image: &RgbaImage) {
     for (i, pixel) in image.pixels().enumerate() {
