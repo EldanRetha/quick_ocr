@@ -116,8 +116,8 @@ fn main() -> Result<(), winit::error::EventLoopError>{
 
 fn keep_mouse_in_window(mouse_pos: PhysicalPosition<f64>, x_max: f64, y_max: f64) -> PhysicalPosition<f64>{
     PhysicalPosition{
-        x: mouse_pos.x.min(x_max - 1f64).max(0f64),
-        y: mouse_pos.y.min(y_max - 1f64).max(0f64)
+        x: mouse_pos.x.min(x_max).max(0f64),
+        y: mouse_pos.y.min(y_max).max(0f64)
     }
 }
 
@@ -127,8 +127,8 @@ fn calculate_rect(pos1: PhysicalPosition<f64>, pos2: PhysicalPosition<f64>) -> R
     let x2 = pos2.x as i32;
     let y2 = pos2.y as i32;
 
-    let width = i32::abs(x1-x2) + 1;
-    let height = i32::abs(y1-y2) + 1;
+    let width = i32::abs(x1-x2).max(1);
+    let height = i32::abs(y1-y2).max(1);
 
     Rect::at(x1.min(x2), y1.min(y2))
         .of_size(width as u32, height as u32)
